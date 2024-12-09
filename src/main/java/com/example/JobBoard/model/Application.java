@@ -1,10 +1,9 @@
 package com.example.JobBoard.model;
+
 import jakarta.persistence.*;
-import lombok.*;
 
 @Entity
 @Table(name = "applications")
-@Data
 public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,4 +21,49 @@ public class Application {
     private String status; // e.g., "Pending", "Accepted", "Rejected"
 
     private String resumeUrl; // Optional if the user uploads a specific resume for this application
+
+    // Getter and Setter for 'id'
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    // Getter and Setter for 'job'
+    public Job getJob() {
+        return job;
+    }
+
+    public void setJob(Job job) {
+        this.job = job;
+    }
+
+    // Getter and Setter for 'jobSeeker'
+    public User getJobSeeker() {
+        return jobSeeker;
+    }
+
+    public void setJobSeeker(User jobSeeker) {
+        this.jobSeeker = jobSeeker;
+    }
+
+    // Getter and Setter for 'status'
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    // Getter and Setter for 'resumeUrl'
+    public String getResumeUrl() {
+        return resumeUrl;
+    }
+
+    public void setResumeUrl(String resumeUrl) {
+        this.resumeUrl = resumeUrl;
+    }
 }
