@@ -27,4 +27,8 @@ public class RoleService {
     public Role getRoleByName(String name) {
         return roleRepository.findByName(name);
     }
+    public void deleteRole(Role role) {
+        roleRepository.delete(role);
+    }
+
 }

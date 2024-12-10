@@ -38,4 +38,22 @@ public class RoleController {
         }
         return ResponseEntity.ok(role);
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Role> updateRole(@PathVariable Long id, @RequestBody Role role) {
+        return roleService.getRoleById(id)
+                .map(existingRole -> {
+                    existingRole.setName(role.getName());
+                    return ResponseEntity.ok(roleService.createRole(existingRole));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteRole(@PathVariable Long id) {
+        roleService.getRoleById(id)
+                .ifPresent(role -> roleService.deleteRole(role));
+        return ResponseEntity.noContent().build();
+    }
+
+
 }
