@@ -1,5 +1,6 @@
 package com.example.JobBoard.controller;
 import com.example.JobBoard.model.Role;
+import com.example.JobBoard.model.User;
 import com.example.JobBoard.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -54,6 +55,9 @@ public class RoleController {
                 .ifPresent(role -> roleService.deleteRole(role));
         return ResponseEntity.noContent().build();
     }
-
+    @GetMapping("/all")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        return ResponseEntity.ok(roleService.getAllRoles());
+    }
 
 }
