@@ -94,11 +94,22 @@ public class UserService {
     public Optional<User> validateTwoFactorToken(String token) {
         Optional<TwoFactorToken> twoFactorToken = twoFactorTokenRepository.findByToken(token);
 
-        if (twoFactorToken.isPresent() && twoFactorToken.get().getExpiryDate().after(new Date())) {
-            // Token is valid, return the user associated with the token
-            return Optional.of(twoFactorToken.get().getUser());
+        if (twoFactorToken.isPresent()) {
+            TwoFactorToken tokenEntity = twoFactorToken.get();
+
+            // Check if token is expired
+            if (tokenEntity.getExpiryDate().before(new Date())) {
+                twoFactorTokenRepository.delete(tokenEntity);
+                System.out.println("Token is expired.");
+                return Optional.empty();
+            }
+
+            // Return the associated user
+            return Optional.of(tokenEntity.getUser());
         }
-        return Optional.empty();  // Return empty if token is invalid or expired
+
+        System.out.println("Token not found.");
+        return Optional.empty();
     }
 
 

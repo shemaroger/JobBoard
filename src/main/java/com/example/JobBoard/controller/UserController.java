@@ -59,7 +59,13 @@ public class UserController {
         if (user.isPresent()) {
             // Trigger 2FA by calling sendTwoFactorToken instead of triggerTwoFactorAuthentication
             userService.sendTwoFactorToken(user.get());
-            return ResponseEntity.ok("2FA code sent to your email.");
+
+            // Return a response indicating the user needs to complete 2FA
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("message", "2FA code sent to your email.");
+            responseData.put("needs2FA", true);  // Indicate the need for 2FA
+
+            return ResponseEntity.ok(responseData);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password.");
         }
@@ -68,7 +74,9 @@ public class UserController {
     @PostMapping("/validate-2fa")
     public ResponseEntity<String> validateTwoFactorToken(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         String token = request.get("token");
-        Optional<User> user = userService.validateTwoFactorToken(token);  // Expecting an Optional<User> here
+        String email = request.get("email");
+        System.out.println("Received token: " + token + ", email: " + email);
+        Optional<User> user = userService.validateTwoFactorToken(token);
 
         if (user.isPresent()) {
             // Set session attributes
@@ -89,6 +97,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired 2FA token.");
         }
     }
+
 
 
     @PostMapping("/forgot-password")
