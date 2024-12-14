@@ -20,6 +20,7 @@ public class UserController {
 
     private final UserService userService;
 
+
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
@@ -80,5 +81,51 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse); // 401 Unauthorized
         }
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
 
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().body("Email is required.");
+        }
+
+        // Generate reset token for the provided email
+        String token = userService.createPasswordResetToken(email);
+
+        if (token != null) {
+            // Create a reset link (replace with your React frontend's URL)
+            String resetLink = "http://localhost:3000/resetpassword?token=" + token;
+
+            try {
+                // Send the reset email
+                userService.sendResetEmail(email, resetLink);
+                return ResponseEntity.ok("Reset email sent.");
+            } catch (Exception e) {
+                // Log the exception (you might want to use a logging framework here)
+                System.err.println("Error sending reset email: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to send reset email. Please try again later.");
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Email not found.");
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+
+        if (token == null || newPassword == null) {
+            return ResponseEntity.badRequest().body("Token and new password are required.");
+        }
+
+        boolean success = userService.updatePassword(token, newPassword);
+
+        if (success) {
+            return ResponseEntity.ok("Password reset successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token.");
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package com.example.JobBoard.repository;
+package com.example.JobBoard.model;
 
 import com.example.JobBoard.model.User;
 import jakarta.persistence.*;
