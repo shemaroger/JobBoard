@@ -94,7 +94,7 @@ public class UserController {
 
         if (token != null) {
             // Create a reset link (replace with your React frontend's URL)
-            String resetLink = "http://localhost:3000/resetpassword?token=" + token;
+            String resetLink = "http://localhost:3000/reset-password?token=" + token;
 
             try {
                 // Send the reset email

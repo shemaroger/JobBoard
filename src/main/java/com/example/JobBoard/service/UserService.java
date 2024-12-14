@@ -91,7 +91,18 @@ public class UserService {
     // 3. Validate Token
     public boolean validateToken(String token) {
         Optional<PasswordResetToken> resetToken = tokenRepository.findByToken(token);
-        return resetToken.isPresent() && resetToken.get().getExpiryDate().after(new Date());
+
+        if (resetToken.isPresent()) {
+            PasswordResetToken tokenEntity = resetToken.get();
+            Date now = new Date();
+            Date creationTime = tokenEntity.getCreatedDate();
+            long fiveMinutesInMillis = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+            // Check if the current time is within 5 minutes of the token's creation
+            return now.getTime() - creationTime.getTime() <= fiveMinutesInMillis;
+        }
+
+        return false;
     }
 
     // 4. Update Password

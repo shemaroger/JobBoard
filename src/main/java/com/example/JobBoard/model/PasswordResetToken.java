@@ -1,6 +1,5 @@
 package com.example.JobBoard.model;
 
-import com.example.JobBoard.model.User;
 import jakarta.persistence.*;
 import java.util.Date;
 
@@ -19,6 +18,9 @@ public class PasswordResetToken {
 
     private Date expiryDate;
 
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdDate; // Added field to track token creation time
+
     // Constructors, getters, and setters
     public PasswordResetToken() {}
 
@@ -26,6 +28,7 @@ public class PasswordResetToken {
         this.token = token;
         this.user = user;
         this.expiryDate = expiryDate;
+        this.createdDate = new Date(); // Set creation time when token is created
     }
 
     public Long getId() {
@@ -58,5 +61,13 @@ public class PasswordResetToken {
 
     public void setExpiryDate(Date expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public Date getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
     }
 }
