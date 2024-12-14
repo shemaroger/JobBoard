@@ -111,7 +111,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Email not found.");
     }
-    @PostMapping("/reset-password")
+    @PostMapping("/resetpasswords")
     public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
         String token = request.get("token");
         String newPassword = request.get("newPassword");
