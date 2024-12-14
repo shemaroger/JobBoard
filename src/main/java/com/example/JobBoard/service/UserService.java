@@ -26,10 +26,11 @@ public class UserService {
     private PasswordResetTokenRepository tokenRepository;
     private JavaMailSender mailSender;
     @Autowired
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordResetTokenRepository tokenRepository, JavaMailSender mailSender) {
         this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.mailSender = mailSender;
     }
-
     public User createUser(User user) {
         return userRepository.save(user);
     }
