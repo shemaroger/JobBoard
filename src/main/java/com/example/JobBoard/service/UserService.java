@@ -1,36 +1,41 @@
 package com.example.JobBoard.service;
 
 import com.example.JobBoard.model.PasswordResetToken;
-import com.example.JobBoard.model.Role;
+import com.example.JobBoard.model.TwoFactorToken;
 import com.example.JobBoard.model.User;
 import com.example.JobBoard.repository.PasswordResetTokenRepository;
-import com.example.JobBoard.repository.RoleRepository;
+import com.example.JobBoard.repository.TwoFactorTokenRepository;
 import com.example.JobBoard.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-    private PasswordResetTokenRepository tokenRepository;
-    private JavaMailSender mailSender;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final TwoFactorTokenRepository twoFactorTokenRepository;
+    private final JavaMailSender mailSender;
+
     @Autowired
-    public UserService(UserRepository userRepository, PasswordResetTokenRepository tokenRepository, JavaMailSender mailSender) {
+    public UserService(UserRepository userRepository, PasswordResetTokenRepository passwordResetTokenRepository,
+                       TwoFactorTokenRepository twoFactorTokenRepository, JavaMailSender mailSender) {
         this.userRepository = userRepository;
-        this.tokenRepository = tokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.twoFactorTokenRepository = twoFactorTokenRepository;
         this.mailSender = mailSender;
     }
+
+    // User Management Methods
     public User createUser(User user) {
         return userRepository.save(user);
     }
@@ -48,31 +53,67 @@ public class UserService {
     }
 
     public User updateUser(User user) {
-        return userRepository.save(user); // Assuming save will handle both update and create
+        return userRepository.save(user);
     }
 
     public void deleteUser(User user) {
         userRepository.delete(user);
     }
+
+    // Login with Two-Factor Authentication
     public Optional<User> login(String email, String password) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent() && user.get().getPassword().equals(password)) {
-            return user;
+            sendTwoFactorToken(user.get());
+            return Optional.of(user.get());
         }
         return Optional.empty();
     }
 
+    // Send 2FA Token
+    public void sendTwoFactorToken(User user) {
+        String token = UUID.randomUUID().toString();
+        TwoFactorToken twoFactorToken = new TwoFactorToken();
+        twoFactorToken.setToken(token);
+        twoFactorToken.setUser(user);
+        twoFactorToken.setExpiryDate(new Date(System.currentTimeMillis() + 5 * 60 * 1000)); // 5 minutes expiry
+        twoFactorTokenRepository.save(twoFactorToken);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(user.getEmail());
+            helper.setSubject("Your Two-Factor Authentication Code");
+            helper.setText("Your 2FA code is: " + token, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Optional<User> validateTwoFactorToken(String token) {
+        Optional<TwoFactorToken> twoFactorToken = twoFactorTokenRepository.findByToken(token);
+
+        if (twoFactorToken.isPresent() && twoFactorToken.get().getExpiryDate().after(new Date())) {
+            // Token is valid, return the user associated with the token
+            return Optional.of(twoFactorToken.get().getUser());
+        }
+        return Optional.empty();  // Return empty if token is invalid or expired
+    }
+
+
+    // Password Reset Methods
     public String createPasswordResetToken(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()) {
             String token = UUID.randomUUID().toString();
             PasswordResetToken resetToken = new PasswordResetToken(token, user.get(), new Date(System.currentTimeMillis() + 30 * 60 * 1000)); // 30 minutes expiry
-            tokenRepository.save(resetToken);
+            passwordResetTokenRepository.save(resetToken);
             return token;
         }
         return null;
     }
-    // 2. Send Reset Email
+
     public void sendResetEmail(String email, String resetLink) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -84,38 +125,18 @@ public class UserService {
             mailSender.send(message);
         } catch (MessagingException e) {
             e.printStackTrace();
-            // Handle exception
         }
     }
 
-    // 3. Validate Token
-    public boolean validateToken(String token) {
-        Optional<PasswordResetToken> resetToken = tokenRepository.findByToken(token);
-
-        if (resetToken.isPresent()) {
-            PasswordResetToken tokenEntity = resetToken.get();
-            Date now = new Date();
-            Date creationTime = tokenEntity.getCreatedDate();
-            long fiveMinutesInMillis = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-            // Check if the current time is within 5 minutes of the token's creation
-            return now.getTime() - creationTime.getTime() <= fiveMinutesInMillis;
-        }
-
-        return false;
-    }
-
-    // 4. Update Password
     public boolean updatePassword(String token, String password) {
-        Optional<PasswordResetToken> resetToken = tokenRepository.findByToken(token);
+        Optional<PasswordResetToken> resetToken = passwordResetTokenRepository.findByToken(token);
         if (resetToken.isPresent() && resetToken.get().getExpiryDate().after(new Date())) {
             User user = resetToken.get().getUser();
             user.setPassword(password);
             userRepository.save(user);
-            tokenRepository.delete(resetToken.get()); // Delete token after successful password reset
+            passwordResetTokenRepository.delete(resetToken.get());
             return true;
         }
         return false;
     }
-
 }

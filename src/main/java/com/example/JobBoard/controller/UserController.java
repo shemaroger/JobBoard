@@ -1,5 +1,5 @@
 package com.example.JobBoard.controller;
-import com.example.JobBoard.model.Role;
+
 import com.example.JobBoard.model.User;
 import com.example.JobBoard.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,7 +19,6 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
-
 
     @Autowired
     public UserController(UserService userService) {
@@ -58,29 +57,40 @@ public class UserController {
         Optional<User> user = userService.login(email, password);
 
         if (user.isPresent()) {
-            HttpSession session = request.getSession();
-            Role role = user.get().getRole();
+            // Trigger 2FA by calling sendTwoFactorToken instead of triggerTwoFactorAuthentication
+            userService.sendTwoFactorToken(user.get());
+            return ResponseEntity.ok("2FA code sent to your email.");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password.");
+        }
+    }
 
+    @PostMapping("/validate-2fa")
+    public ResponseEntity<String> validateTwoFactorToken(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        String token = request.get("token");
+        Optional<User> user = userService.validateTwoFactorToken(token);  // Expecting an Optional<User> here
+
+        if (user.isPresent()) {
             // Set session attributes
-            session.setAttribute("email", user.get().getEmail());
-            session.setAttribute("role", user.get().getRole());
-            session.setAttribute("fullname", user.get().getName());
+            HttpSession session = httpRequest.getSession();
+            User loggedInUser = user.get();
+            session.setAttribute("email", loggedInUser.getEmail());
+            session.setAttribute("role", loggedInUser.getRole());
+            session.setAttribute("fullname", loggedInUser.getName());
 
             // Prepare response data
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("role", role);
-            responseData.put("email", user.get().getEmail());
-            responseData.put("fullname", user.get().getName());
+            responseData.put("role", loggedInUser.getRole());
+            responseData.put("email", loggedInUser.getEmail());
+            responseData.put("fullname", loggedInUser.getName());
 
-            // Return a response with status 200 (OK)
-            return ResponseEntity.ok(responseData);
+            return ResponseEntity.ok("Login successful.");
         } else {
-            // Return error response if login failed
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("errorMessage", "Invalid email or password");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse); // 401 Unauthorized
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired 2FA token.");
         }
     }
+
+
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -89,28 +99,24 @@ public class UserController {
             return ResponseEntity.badRequest().body("Email is required.");
         }
 
-        // Generate reset token for the provided email
         String token = userService.createPasswordResetToken(email);
 
         if (token != null) {
-            // Create a reset link (replace with your React frontend's URL)
             String resetLink = "http://localhost:3000/resetpassword?token=" + token;
 
             try {
-                // Send the reset email
                 userService.sendResetEmail(email, resetLink);
                 return ResponseEntity.ok("Reset email sent.");
             } catch (Exception e) {
-                // Log the exception (you might want to use a logging framework here)
                 System.err.println("Error sending reset email: " + e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Failed to send reset email. Please try again later.");
             }
         }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Email not found.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email not found.");
     }
+
     @PostMapping("/resetpasswords")
     public ResponseEntity<String> resetPassword(@RequestBody Map<String, String> request) {
         String token = request.get("token");
