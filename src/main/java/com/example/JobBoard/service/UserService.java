@@ -117,13 +117,22 @@ public class UserService {
     public String createPasswordResetToken(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()) {
-            String token = UUID.randomUUID().toString();
-            PasswordResetToken resetToken = new PasswordResetToken(token, user.get(), new Date(System.currentTimeMillis() + 30 * 60 * 1000)); // 30 minutes expiry
+            // Generate an 8-digit numeric token
+            String token = String.format("%08d", new java.util.Random().nextInt(100000000));
+
+            // Create the PasswordResetToken entity with the generated token
+            PasswordResetToken resetToken = new PasswordResetToken(
+                    token,
+                    user.get(),
+                    new Date(System.currentTimeMillis() + 30 * 60 * 1000) // 30 minutes expiry
+            );
+
             passwordResetTokenRepository.save(resetToken);
             return token;
         }
         return null;
     }
+
 
     public void sendResetEmail(String email, String resetLink) {
         try {
