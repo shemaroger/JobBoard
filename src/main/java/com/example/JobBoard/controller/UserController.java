@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +39,28 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    @PutMapping("/update/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
+        Optional<User> existingUserOpt = userService.getUserById(id);
+
+        if (existingUserOpt.isPresent()) {
+            // Get the existing user
+            User existingUser = existingUserOpt.get();
+
+            // Update the user's fields with the new data
+            existingUser.setEmail(updatedUser.getEmail());
+            existingUser.setPassword(updatedUser.getPassword());
+            existingUser.setName(updatedUser.getName());
+            existingUser.setRole(updatedUser.getRole());
+
+            // Save the updated user back to the database
+            User savedUser = userService.updateUser(existingUser);
+
+            return ResponseEntity.ok(savedUser);  // Return the updated user
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);  // User not found
+        }
+    }
 
     @GetMapping("/email/{email}")
     public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
@@ -45,8 +70,12 @@ public class UserController {
     }
 
     @GetMapping("/allUsers")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public Page<User> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,  // Default page = 0
+            @RequestParam(defaultValue = "10") int size // Default size = 10
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userService.getAllUsers(pageable);
     }
 
     @PostMapping("/login")
@@ -74,9 +103,7 @@ public class UserController {
     @PostMapping("/validate-2fa")
     public ResponseEntity<String> validateTwoFactorToken(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         String token = request.get("token");
-        String email = request.get("email");
-        System.out.println("Received token: " + token + ", email: " + email);
-        Optional<User> user = userService.validateTwoFactorToken(token);
+        Optional<User> user = userService.validateTwoFactorToken(token);  // Expecting an Optional<User> here
 
         if (user.isPresent()) {
             // Set session attributes
@@ -97,7 +124,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired 2FA token.");
         }
     }
-
 
 
     @PostMapping("/forgot-password")
@@ -141,6 +167,21 @@ public class UserController {
             return ResponseEntity.ok("Password reset successfully.");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token.");
+        }
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        try {
+            // Check if the user exists before deleting
+            Optional<User> user = userService.getUserById(id);
+            if (user.isPresent()) {
+                userService.deleteUser(user.get()); // Call deleteUser from the service
+                return ResponseEntity.ok("User deleted successfully");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting user: " + e.getMessage());
         }
     }
 }

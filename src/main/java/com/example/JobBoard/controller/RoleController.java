@@ -55,6 +55,7 @@ public class RoleController {
                 .ifPresent(role -> roleService.deleteRole(role));
         return ResponseEntity.noContent().build();
     }
+    
     @GetMapping("/all")
     public ResponseEntity<List<Role>> getAllRoles() {
         return ResponseEntity.ok(roleService.getAllRoles());

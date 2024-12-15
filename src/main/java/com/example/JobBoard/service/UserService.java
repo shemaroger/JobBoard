@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Date;
 import java.util.List;
@@ -48,14 +50,17 @@ public class UserService {
         return userRepository.findByEmail(email);
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public User updateUser(User user) {
         return userRepository.save(user);
     }
 
+
+    // Delete the user
     public void deleteUser(User user) {
         userRepository.delete(user);
     }
@@ -112,7 +117,6 @@ public class UserService {
         return Optional.empty();
     }
 
-
     // Password Reset Methods
     public String createPasswordResetToken(String email) {
         Optional<User> user = userRepository.findByEmail(email);
@@ -132,7 +136,6 @@ public class UserService {
         }
         return null;
     }
-
 
     public void sendResetEmail(String email, String resetLink) {
         try {
