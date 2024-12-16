@@ -39,6 +39,22 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        return userService.getUserByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/allUsers")
+    public Page<User> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,  // Default page = 0
+            @RequestParam(defaultValue = "10") int size // Default size = 10
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return userService.getAllUsers(pageable);
+    }
     @PutMapping("/update/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updatedUser) {
         Optional<User> existingUserOpt = userService.getUserById(id);
@@ -62,22 +78,6 @@ public class UserController {
         }
     }
 
-    @GetMapping("/email/{email}")
-    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
-        return userService.getUserByEmail(email)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/allUsers")
-    public Page<User> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,  // Default page = 0
-            @RequestParam(defaultValue = "10") int size // Default size = 10
-    ) {
-        Pageable pageable = PageRequest.of(page, size);
-        return userService.getAllUsers(pageable);
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> loginData, HttpServletRequest request) {
         String email = loginData.get("email");
@@ -86,45 +86,48 @@ public class UserController {
         Optional<User> user = userService.login(email, password);
 
         if (user.isPresent()) {
-            // Trigger 2FA by calling sendTwoFactorToken instead of triggerTwoFactorAuthentication
-            userService.sendTwoFactorToken(user.get());
+            User loggedInUser = user.get();
 
-            // Return a response indicating the user needs to complete 2FA
+            // Trigger 2FA
+            userService.sendTwoFactorToken(loggedInUser);
+
+            // Prepare response data with role information
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("message", "2FA code sent to your email.");
-            responseData.put("needs2FA", true);  // Indicate the need for 2FA
+            responseData.put("needs2FA", true);
+            responseData.put("role", loggedInUser.getRole().getName()); // Add role to response
+            responseData.put("email", loggedInUser.getEmail());
+            responseData.put("userId", loggedInUser.getId());
 
             return ResponseEntity.ok(responseData);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid email or password"));
         }
     }
 
     @PostMapping("/validate-2fa")
-    public ResponseEntity<String> validateTwoFactorToken(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+    public ResponseEntity<?> validateTwoFactorToken(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         String token = request.get("token");
-        Optional<User> user = userService.validateTwoFactorToken(token);  // Expecting an Optional<User> here
+        Optional<User> user = userService.validateTwoFactorToken(token);
 
         if (user.isPresent()) {
-            // Set session attributes
-            HttpSession session = httpRequest.getSession();
             User loggedInUser = user.get();
-            session.setAttribute("email", loggedInUser.getEmail());
-            session.setAttribute("role", loggedInUser.getRole());
-            session.setAttribute("fullname", loggedInUser.getName());
 
-            // Prepare response data
+            // Prepare a comprehensive response
             Map<String, Object> responseData = new HashMap<>();
-            responseData.put("role", loggedInUser.getRole());
+            responseData.put("message", "Login successful");
+            responseData.put("userId", loggedInUser.getId());
             responseData.put("email", loggedInUser.getEmail());
-            responseData.put("fullname", loggedInUser.getName());
+            responseData.put("name", loggedInUser.getName());
+            responseData.put("role", loggedInUser.getRole().getName());
 
-            return ResponseEntity.ok("Login successful.");
+            return ResponseEntity.ok(responseData);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired 2FA token.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired 2FA token"));
         }
     }
-
 
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> request) {
@@ -167,21 +170,6 @@ public class UserController {
             return ResponseEntity.ok("Password reset successfully.");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token.");
-        }
-    }
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        try {
-            // Check if the user exists before deleting
-            Optional<User> user = userService.getUserById(id);
-            if (user.isPresent()) {
-                userService.deleteUser(user.get()); // Call deleteUser from the service
-                return ResponseEntity.ok("User deleted successfully");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting user: " + e.getMessage());
         }
     }
 }

@@ -67,11 +67,19 @@ public class UserService {
 
     // Login with Two-Factor Authentication
     public Optional<User> login(String email, String password) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isPresent() && user.get().getPassword().equals(password)) {
-            sendTwoFactorToken(user.get());
-            return Optional.of(user.get());
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+
+            // Basic password check (replace with secure password encoding in production)
+            if (user.getPassword().equals(password)) {
+                // Successful login
+                sendTwoFactorToken(user);
+                return Optional.of(user);
+            }
         }
+
         return Optional.empty();
     }
 
