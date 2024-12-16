@@ -20,13 +20,13 @@ public class JobCategoryController {
     }
 
     // Create a new category
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<JobCategory> createCategory(@RequestBody JobCategory category) {
         return ResponseEntity.ok(jobCategoryService.createCategory(category));
     }
 
     // Get all categories
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<JobCategory>> getAllCategories() {
         return ResponseEntity.ok(jobCategoryService.getAllCategories());
     }
@@ -50,7 +50,7 @@ public class JobCategoryController {
     }
 
     // Update category by ID
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<JobCategory> updateCategory(@PathVariable Long id, @RequestBody JobCategory category) {
         JobCategory updatedCategory = jobCategoryService.updateCategory(id, category);
         if (updatedCategory == null) {
@@ -60,7 +60,7 @@ public class JobCategoryController {
     }
 
     // Delete category by ID
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         boolean isDeleted = jobCategoryService.deleteCategory(id);
         if (isDeleted) {

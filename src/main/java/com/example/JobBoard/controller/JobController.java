@@ -1,4 +1,5 @@
 package com.example.JobBoard.controller;
+
 import com.example.JobBoard.model.Job;
 import com.example.JobBoard.service.JobService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,13 @@ public class JobController {
         this.jobService = jobService;
     }
 
-    @PostMapping
+    // Create a new job
+    @PostMapping("/add")
     public ResponseEntity<Job> createJob(@RequestBody Job job) {
         return ResponseEntity.ok(jobService.createJob(job));
     }
 
+    // Get job by ID
     @GetMapping("/{id}")
     public ResponseEntity<Job> getJobById(@PathVariable Long id) {
         return jobService.getJobById(id)
@@ -30,23 +33,41 @@ public class JobController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping
+    // Get all jobs
+    @GetMapping("/all")
     public ResponseEntity<List<Job>> getAllJobs() {
         return ResponseEntity.ok(jobService.getAllJobs());
     }
 
+    // Get jobs by category ID
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Job>> getJobsByCategory(@PathVariable Long categoryId) {
         return ResponseEntity.ok(jobService.getJobsByCategory(categoryId));
     }
 
+    // Get jobs by employer ID
     @GetMapping("/employer/{employerId}")
     public ResponseEntity<List<Job>> getJobsByEmployer(@PathVariable Long employerId) {
         return ResponseEntity.ok(jobService.getJobsByEmployer(employerId));
     }
 
+    // Get jobs by location
     @GetMapping("/location")
     public ResponseEntity<List<Job>> getJobsByLocation(@RequestParam String location) {
         return ResponseEntity.ok(jobService.getJobsByLocation(location));
+    }
+
+    // Update a job by ID
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job jobDetails) {
+        Job updatedJob = jobService.updateJob(id, jobDetails);
+        return ResponseEntity.ok(updatedJob);
+    }
+
+    // Delete a job by ID
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
+        jobService.deleteJob(id);
+        return ResponseEntity.noContent().build();
     }
 }
