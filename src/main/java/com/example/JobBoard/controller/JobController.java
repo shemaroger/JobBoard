@@ -63,6 +63,11 @@ public class JobController {
         Job updatedJob = jobService.updateJob(id, jobDetails);
         return ResponseEntity.ok(updatedJob);
     }
+    // Search jobs globally
+    @GetMapping("/search")
+    public ResponseEntity<List<Job>> searchJobs(@RequestParam String keyword) {
+        return ResponseEntity.ok(jobService.searchJobs(keyword));
+    }
 
     // Delete a job by ID
     @DeleteMapping("/delete/{id}")

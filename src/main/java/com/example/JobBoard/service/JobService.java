@@ -64,6 +64,9 @@ public class JobService {
 
         return jobRepository.save(job);
     }
+    public List<Job> searchJobs(String keyword) {
+        return jobRepository.searchJobs(keyword);
+    }
 
     // Delete a job
     public void deleteJob(Long id) {
