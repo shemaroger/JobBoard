@@ -55,8 +55,13 @@ public class JobController {
     // Get jobs by category ID
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Job>> getJobsByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(jobService.getJobsByCategory(categoryId));
+        List<Job> jobs = jobService.getJobsByCategory(categoryId);
+        if (jobs.isEmpty()) {
+            return ResponseEntity.noContent().build();  // or ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(jobs);
     }
+
 
     // Get jobs by employer ID
     @GetMapping("/employer/{employerId}")

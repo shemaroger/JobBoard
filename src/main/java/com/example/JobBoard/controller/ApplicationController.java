@@ -18,7 +18,7 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
-    @PostMapping
+    @PostMapping("/apply")
     public ResponseEntity<Application> createApplication(@RequestBody Application application) {
         return ResponseEntity.ok(applicationService.createApplication(application));
     }
