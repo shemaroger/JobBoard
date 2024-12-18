@@ -19,10 +19,15 @@ public class JobService {
     }
 
     // Create a new job
+    // Method to create/save a new job
     public Job createJob(Job job) {
+        // Additional validations or business logic can be added here
+        if (job.getEmployer() == null || job.getEmployer().getId() == null) {
+            throw new IllegalArgumentException("Employer information is required.");
+        }
+
         return jobRepository.save(job);
     }
-
     // Get a job by its ID
     public Optional<Job> getJobById(Long id) {
         return jobRepository.findById(id);

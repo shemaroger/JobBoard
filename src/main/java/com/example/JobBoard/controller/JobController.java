@@ -1,6 +1,7 @@
 package com.example.JobBoard.controller;
 
 import com.example.JobBoard.model.Job;
+import com.example.JobBoard.model.User;
 import com.example.JobBoard.service.JobService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,14 +20,26 @@ public class JobController {
         this.jobService = jobService;
     }
 
-    // Create a new job
     @PostMapping("/add")
-    public ResponseEntity<Job> createJob(@RequestBody Job job) {
-        return ResponseEntity.ok(jobService.createJob(job));
+    public ResponseEntity<?> addJob(@RequestBody Job job, @RequestParam Long employerId) {
+        try {
+            // Set Employer based on employerId
+            User employer = new User();
+            employer.setId(employerId);
+            job.setEmployer(employer);
+
+            // Call the service layer to save the job
+            Job createdJob = jobService.createJob(job);
+
+            return ResponseEntity.ok(createdJob);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to add job: " + e.getMessage());
+        }
     }
 
+
     // Get job by ID
-    @GetMapping("/{id}")
+    @GetMapping("/details/{id}")
     public ResponseEntity<Job> getJobById(@PathVariable Long id) {
         return jobService.getJobById(id)
                 .map(ResponseEntity::ok)
@@ -65,7 +78,10 @@ public class JobController {
     }
     // Search jobs globally
     @GetMapping("/search")
-    public ResponseEntity<List<Job>> searchJobs(@RequestParam String keyword) {
+    public ResponseEntity<List<Job>> searchJobs(@RequestParam(required = false, defaultValue = "") String keyword) {
+        if (keyword.isEmpty()) {
+            return ResponseEntity.ok(jobService.getAllJobs()); // Return all jobs if no keyword is provided
+        }
         return ResponseEntity.ok(jobService.searchJobs(keyword));
     }
 

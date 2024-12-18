@@ -26,12 +26,12 @@ public class Job {
 
     private String salaryRange;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employer_id", nullable = false)
     private User employer; // Reference to the employer who posted the job
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id", nullable = true)
     private JobCategory category; // Reference to the job category
 
     // Getter and Setter for 'id'
