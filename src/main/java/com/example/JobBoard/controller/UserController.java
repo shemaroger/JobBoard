@@ -1,5 +1,6 @@
 package com.example.JobBoard.controller;
 
+import com.example.JobBoard.model.Job;
 import com.example.JobBoard.model.User;
 import com.example.JobBoard.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -104,6 +105,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid email or password"));
         }
+
+
     }
 
     @PostMapping("/validate-2fa")
@@ -171,5 +174,10 @@ public class UserController {
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired token.");
         }
+    }
+    // Search users by keyword
+    @GetMapping("/search")
+    public List<User> searchUsers(@RequestParam("keyword") String keyword) {
+        return userService.searchUsers(keyword);
     }
 }

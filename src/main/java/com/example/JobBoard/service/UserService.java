@@ -1,5 +1,6 @@
 package com.example.JobBoard.service;
 
+import com.example.JobBoard.model.Job;
 import com.example.JobBoard.model.PasswordResetToken;
 import com.example.JobBoard.model.TwoFactorToken;
 import com.example.JobBoard.model.User;
@@ -124,7 +125,10 @@ public class UserService {
         System.out.println("Token not found.");
         return Optional.empty();
     }
-
+    // Search users by keyword
+    public List<User> searchUsers(String keyword) {
+        return userRepository.searchUser(keyword);
+    }
     // Password Reset Methods
     public String createPasswordResetToken(String email) {
         Optional<User> user = userRepository.findByEmail(email);

@@ -1,10 +1,12 @@
 package com.example.JobBoard.model;
 
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "applications")
 public class Application {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -13,14 +15,22 @@ public class Application {
     @JoinColumn(name = "job_id", nullable = false)
     private Job job; // Reference to the job being applied for
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_seeker_id", nullable = false)
-    private User jobSeeker; // Reference to the user applying
+    @Column(nullable = false)
+    private String fullName; // Full name of the applicant
+
+    @Column(nullable = false)
+    private String email; // Email of the applicant
+
+    @Column(nullable = false)
+    private String phoneNumber; // Phone number of the applicant
 
     @Column(nullable = false)
     private String status; // e.g., "Pending", "Accepted", "Rejected"
 
-    private String resumeUrl; // Optional if the user uploads a specific resume for this application
+    @ElementCollection
+    @CollectionTable(name = "application_files", joinColumns = @JoinColumn(name = "application_id"))
+    @Column(name = "file_url")
+    private List<String> fileUrls; // Stores multiple file URLs or paths
 
     // Getter and Setter for 'id'
     public Long getId() {
@@ -40,13 +50,31 @@ public class Application {
         this.job = job;
     }
 
-    // Getter and Setter for 'jobSeeker'
-    public User getJobSeeker() {
-        return jobSeeker;
+    // Getter and Setter for 'fullName'
+    public String getFullName() {
+        return fullName;
     }
 
-    public void setJobSeeker(User jobSeeker) {
-        this.jobSeeker = jobSeeker;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    // Getter and Setter for 'email'
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    // Getter and Setter for 'phoneNumber'
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     // Getter and Setter for 'status'
@@ -58,12 +86,12 @@ public class Application {
         this.status = status;
     }
 
-    // Getter and Setter for 'resumeUrl'
-    public String getResumeUrl() {
-        return resumeUrl;
+    // Getter and Setter for 'fileUrls'
+    public List<String> getFileUrls() {
+        return fileUrls;
     }
 
-    public void setResumeUrl(String resumeUrl) {
-        this.resumeUrl = resumeUrl;
+    public void setFileUrls(List<String> fileUrls) {
+        this.fileUrls = fileUrls;
     }
 }
