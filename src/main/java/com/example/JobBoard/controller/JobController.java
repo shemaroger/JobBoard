@@ -45,7 +45,7 @@ public class JobController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-   
+
 
     // Get all jobs
     @GetMapping("/all")
